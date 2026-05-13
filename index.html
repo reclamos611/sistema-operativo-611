@@ -64,9 +64,35 @@ body{background:#0a0c10;color:#e8ecf8;font-family:'Segoe UI',system-ui,sans-seri
 .rd-msg{font-size:1rem;font-weight:700;}
 .rd-sub{font-size:.8rem;color:#555f78;}
 @keyframes bounce{from{transform:translateY(0);}to{transform:translateY(-10px);}}
+
+/* IFRAME APP SHELL */
+.app-frame { display:none; position:fixed; inset:0; z-index:100; flex-direction:column; background:#0a0c10; }
+.app-frame.show { display:flex; }
+.app-topbar { display:flex; align-items:center; gap:12px; padding:8px 16px;
+              background:#13161e; border-bottom:1px solid #2a2f3e;
+              flex-shrink:0; z-index:101; }
+.app-topbar .app-user { font-size:.82rem; font-weight:700; color:#e8ecf8; }
+.app-topbar .app-role { font-size:.72rem; color:#555f78; margin-left:4px; }
+.app-topbar .logo-sm { font-size:1.1rem; margin-right:4px; }
+.app-topbar .btn-back { margin-left:auto; background:none; border:1px solid #2a2f3e;
+                        border-radius:7px; color:#94a3b8; padding:5px 14px;
+                        font-size:.78rem; cursor:pointer; font-family:inherit; }
+.app-topbar .btn-back:hover { border-color:#6366f1; color:#e8ecf8; }
+.app-iframe { flex:1; border:none; width:100%; height:100%; }
 </style>
 </head>
 <body>
+
+<!-- APP FRAME -->
+<div class="app-frame" id="app-frame">
+  <div class="app-topbar">
+    <span class="logo-sm">&#128230;</span>
+    <span class="app-user" id="frame-user">-</span>
+    <span class="app-role" id="frame-role"></span>
+    <button class="btn-back" onclick="closeFrame()">&#8592; Salir al inicio</button>
+  </div>
+  <iframe class="app-iframe" id="app-iframe" src="" title="App 611"></iframe>
+</div>
 
 <div class="redirect" id="rd">
   <div class="rd-icon" id="rd-icon">&#128230;</div>
@@ -272,15 +298,35 @@ function redirect(session) {
   document.getElementById('rd').classList.add('show');
 
   var dest = APPS[session.role];
-
-  // Gerente ve el dashboard, con un parametro para saber que tiene acceso a analytics
-  if (session.role === 'gerente') {
-    dest += '?rol=gerente';
-  }
+  if (session.role === 'gerente') dest += '?rol=gerente';
 
   setTimeout(function() {
-    window.location.href = dest;
-  }, 800);
+    // Open in iframe instead of navigating away
+    document.getElementById('rd').classList.remove('show');
+    document.getElementById('frame-user').textContent = session.name;
+    document.getElementById('frame-role').textContent = '(' + session.role + ')';
+    document.getElementById('app-iframe').src = dest;
+    document.getElementById('app-frame').classList.add('show');
+    // Hide login wrap
+    document.querySelector('.wrap').style.display = 'none';
+  }, 600);
+}
+
+function closeFrame() {
+  // Clear session and return to login
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+  try { localStorage.removeItem('chofer611'); } catch(e) {}
+  try { localStorage.removeItem('611_guia_vendedor'); } catch(e) {}
+  try { localStorage.removeItem('611_analytics_session'); } catch(e) {}
+  // Reset iframe
+  document.getElementById('app-iframe').src = '';
+  document.getElementById('app-frame').classList.remove('show');
+  // Show login
+  document.querySelector('.wrap').style.display = '';
+  document.getElementById('inp-user').value = '';
+  document.getElementById('inp-pass').value = '';
+  clearErr();
+  setRole('chofer');
 }
 
 // -- Auto-login si hay sesion vigente (12 horas) -------------------------------
