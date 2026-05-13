@@ -54,8 +54,8 @@ ma_path = find("maestro_de_articulos.xlsx","articulos")
 mc_path = find("maestro_clientes.xlsx","clientes")
 va_path = find("venta_anterior.xlsx","anterior")
 vc_path = find("venta_actual.xlsx","actual")
-cart_path = find("Cartones.xlsx","carton") or find("cartones.xlsx","carton")
-mov_path  = find("Movimientos.xlsx","movimiento") or find("movimientos.xlsx","movimiento")
+cart_path = find("cartones.xlsx","carton")
+mov_path  = find("movimientos.xlsx","movimiento")
 
 missing = []
 for name, path in [("maestro_de_articulos",ma_path),("maestro_clientes",mc_path),
