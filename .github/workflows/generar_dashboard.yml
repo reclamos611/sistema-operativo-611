@@ -1,1 +1,33 @@
+name: Actualizar Dashboard Operativo
 
+on:
+  push:
+    paths:
+      - 'data/*.xlsx'
+      - 'data/*.xls'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install pandas openpyxl xlrd
+
+      - name: Generar dashboard
+        run: python generar_dashboard.py
+
+      - name: Subir dashboard actualizado
+        run: |
+          git config user.name 'GitHub Actions'
+          git config user.email 'actions@github.com'
+          git add dashboard_operativo.html
+          git diff --staged --quiet || (git pull --rebase origin main && git push)
