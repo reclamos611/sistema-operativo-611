@@ -179,10 +179,21 @@ if mov_path:
     total_venta_imp = float(va[va['tipo_venta']=='Venta']['Importe'].sum()) if len(va) else 1
     rot_grp = rot.groupby(['descripcion','prov']).agg(
         u=('u','sum'),cu=('cu','first'),tot=('tot','sum'),kg=('kg','sum')).reset_index()
+    # Get date range of movimientos
+    mov_fecha_col = None
+    for col in ['fecha','Fecha','stockmov_fecha','FechaMovimiento']:
+        if col in mov.columns: mov_fecha_col = col; break
+    if mov_fecha_col:
+        mov_fechas = pd.to_datetime(mov[mov_fecha_col], errors='coerce').dropna()
+        periodo_mov = f"{mov_fechas.min().strftime('%d/%m')} - {mov_fechas.max().strftime('%d/%m/%Y')}" if len(mov_fechas) else ''
+    else:
+        periodo_mov = ''
+
     rot_records = [{'desc':str(r['descripcion']),'prov':str(r['prov']),
                     'u':int(r['u']),'cu':round(float(r['cu']),2),
                     'tot':round(float(r['tot']),2),'kg':round(float(r['kg']),3),
-                    'pct_venta':round(float(r['tot'])/total_venta_imp,8) if total_venta_imp else 0}
+                    'pct_venta':round(float(r['tot'])/total_venta_imp,8) if total_venta_imp else 0,
+                    'periodo': periodo_mov}
                    for _,r in rot_grp.iterrows()]
     rot_resumen = {'total_imp':round(float(rot['tot'].sum()),2),
                    'total_kg': round(float(rot['kg'].sum()),3),
@@ -627,6 +638,10 @@ no_cache = ('<meta http-equiv="Cache-Control" content="no-cache, no-store, must-
             '<meta http-equiv="Expires" content="0">\n')
 if 'Cache-Control' not in html:
     html = html.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n'+no_cache, 1)
+
+# Inject build timestamp for cache busting
+build_ts = str(int(datetime.now().timestamp()))
+html = html.replace('__BUILD_TS__', build_ts)
 
 with open(dash_path,'w',encoding='utf-8') as f:
     f.write(html)
