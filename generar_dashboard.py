@@ -586,6 +586,8 @@ if 'Cache-Control' not in html:
 with open(dash_path,'w',encoding='utf-8') as f:
     f.write(html)
 
+fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
+
 size = os.path.getsize(dash_path)
 print(f"\nDashboard actualizado: {size//1024}KB")
 print(f"Completado: {fecha}")
