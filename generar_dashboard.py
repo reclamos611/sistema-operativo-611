@@ -628,40 +628,46 @@ if not os.path.exists(dash_path):
 with open(dash_path,'r',encoding='utf-8') as f:
     html = f.read()
 
-# Find the data block - try multiple patterns
-def find_data_block(html):
-    """Find the start and end of the main data script block"""
-    patterns = [
-        '<script>\nvar D={};',
-        '<script>\nvar D={',
-        '<script>\r\nvar D={',
-    ]
-    for pat in patterns:
-        pos = html.find(pat)
-        if pos >= 0:
-            end = html.find('</script>', pos) + len('</script>')
-            return pos, end
-    return -1, -1
+# Find the data block using DATA_START/DATA_END markers (permanent fix)
+data_start_marker = '<!-- DATA_START -->'
+data_end_marker   = '<!-- DATA_END -->'
+ds_pos = html.find(data_start_marker)
+de_pos = html.find(data_end_marker)
 
-d_sc_start, d_sc_end = find_data_block(html)
-
-if d_sc_start > 0:
-    new_data = '<script>\n' + d_js + '\n' + rd_js + '\n' + cli_js + '\n</script>'
-    html = html[:d_sc_start] + new_data + html[d_sc_end:]
-    print(f"  Datos D+RD+CLI reemplazados ({d_sc_end-d_sc_start:,} -> {len(new_data):,} chars)")
+if ds_pos > 0 and de_pos > 0:
+    # Replace only the content between markers
+    sc_open_start = html.rfind('<script>', 0, ds_pos)
+    sc_close_end  = html.find('</script>', de_pos) + len('</script>')
+    
+    # Build prov_metrics and chofer_prov JS
+    pm_js = make_chunks('PROV_METRICS', prov_metrics_list)
+    cp_js = make_chunks('CHOFER_PROV', chofer_prov_map)
+    
+    new_data = ('<script>' + data_start_marker + '\n'
+                + d_js + '\n' + rd_js + '\n' + cli_js + '\n'
+                + pm_js + '\n' + cp_js + '\n'
+                + data_end_marker + '</script>')
+    html = html[:sc_open_start] + new_data + html[sc_close_end:]
+    print(f"  Datos reemplazados via marcadores ({sc_close_end-sc_open_start:,} -> {len(new_data):,} chars)")
 else:
-    # Last resort: inject before the main JS script
-    main_js_pos = html.find('<script>\n\n\n// ===== AUTH =====')
-    if main_js_pos < 0:
-        main_js_pos = html.find('<script>\nvar TABS=')
-    if main_js_pos < 0:
-        main_js_pos = html.find('<script>\n\nvar TABS=')
-    if main_js_pos > 0:
-        new_data = '<script>\n' + d_js + '\n' + rd_js + '\n' + cli_js + '\n</script>\n'
-        html = html[:main_js_pos] + new_data + html[main_js_pos:]
-        print("  Datos D+RD+CLI inyectados antes del script principal")
+    # Fallback: find by pattern
+    d_sc_start = html.find('<script>\nvar D={}')
+    if d_sc_start < 0:
+        d_sc_start = html.find('<script>\nvar D={')
+    if d_sc_start > 0:
+        d_sc_end = html.find('</script>', d_sc_start) + len('</script>')
+        pm_js = make_chunks('PROV_METRICS', prov_metrics_list)
+        cp_js = make_chunks('CHOFER_PROV', chofer_prov_map)
+        new_data = ('<script>' + data_start_marker + '\n'
+                    + d_js + '\n' + rd_js + '\n' + cli_js + '\n'
+                    + pm_js + '\n' + cp_js + '\n'
+                    + data_end_marker + '</script>')
+        html = html[:d_sc_start] + new_data + html[d_sc_end:]
+        print(f"  Datos reemplazados via patron ({len(new_data):,} chars)")
     else:
-        print("  ADVERTENCIA: no se pudo inyectar datos - verificar formato del HTML")
+        pm_js = make_chunks('PROV_METRICS', prov_metrics_list)
+        cp_js = make_chunks('CHOFER_PROV', chofer_prov_map)
+        print("  ADVERTENCIA: no se pudo inyectar datos")
 
 # Remove old CONC block if exists (datos de ejemplo)
 conc_start = html.find('<script>\nvar CONC=')
