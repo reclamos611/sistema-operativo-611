@@ -285,6 +285,26 @@ else:
 
 # ── SERIALIZAR E INYECTAR ──────────────────────────────────────────────────────
 print("\nSerializando...")
+
+# Reincidentes
+comp_cls2 = vc.groupby('Comprobante')['tipo_venta'].apply(list).reset_index()
+comp_cls2['all_dev'] = comp_cls2['tipo_venta'].apply(lambda ts: all(t=='Devolucion' for t in ts))
+rej_comps2 = set(comp_cls2[comp_cls2['all_dev']]['Comprobante'])
+rej_cli = (vc[vc['Comprobante'].isin(rej_comps2)]
+           .groupby('Cliente')
+           .agg(n=('Comprobante','nunique'),
+                razon=('Razon_Social','first'),
+                loc=('localidad','first'),
+                imp=('Importe','sum'),
+                choferes=('chofer', lambda x: ', '.join(sorted(set(str(v) for v in x))[:3])),
+                fechas=('fecha_str', lambda x: ', '.join(sorted(set(str(v) for v in x))[:5])))
+           .reset_index())
+reinc_list = [{'cid':int(r['Cliente']),'razon':str(r['razon'])[:35],
+               'loc':str(r['loc'])[:22] if r['loc'] else '',
+               'n':int(r['n']),'imp':round(float(abs(r['imp'])),0),
+               'choferes':str(r['choferes'])[:40],'fechas':str(r['fechas'])}
+              for _,r in rej_cli[rej_cli['n']>1].sort_values('n',ascending=False).head(50).iterrows()]
+print(f"  Reincidentes: {len(reinc_list)}")
 DATA_JS = '\n'.join([
     make_chunks('D_KPIS',   rej_kpis),
     make_chunks('D_MOTIVO', by_motivo),
@@ -298,7 +318,8 @@ DATA_JS = '\n'.join([
     f'var D_PROVS={json.dumps(sorted(vc["proveedor"].dropna().str.strip().unique().tolist()),ensure_ascii=True,separators=(",",":"))};',
     f'var D_CHS={json.dumps(sorted(vc["chofer"].dropna().str.strip().unique().tolist()),ensure_ascii=True,separators=(",",":"))};',
     make_chunks('D_CART',   cart_records),
-    f'var D_DEP={json.dumps(dep_data,ensure_ascii=True,separators=(",",":"))};'
+    f'var D_DEP={json.dumps(dep_data,ensure_ascii=True,separators=(",",":"))};',
+    f'var D_REINC={json.dumps(reinc_list,ensure_ascii=True,separators=(",",":"))};'
 ])
 
 dash_path = os.path.join(BASE_DIR, 'dashboard_operativo.html')
