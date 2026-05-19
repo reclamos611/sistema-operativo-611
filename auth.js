@@ -520,7 +520,7 @@ function loadPWA(){
   if(!cont) return;
   load.style.display='block'; cont.style.display='none'; err.style.display='none';
 
-  fetch(SHEETS_API+'?accion=getRechazos', {method:'GET',mode:'cors'})
+  fetch(SHEETS_API, {method:'GET',mode:'cors'})
     .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(data){
       pwaRows = Array.isArray(data)?data:(data.rechazos||data.data||[]);
@@ -546,32 +546,40 @@ function renderConciliacion(){
     var cls = D_CLI[String(r.rep)]||[];
     cls.forEach(function(c){
       if(c[7]===1){ // rechazo total
-        var key = String(c[0])+'_'+r.f;
-        gesMap[key] = {cliente:c[0],razon:c[1],chofer:r.ch,fecha:r.f,imp:Math.abs(c[5])};
+        var chKey=r.ch.trim().toUpperCase()+'_'+r.f;
+        if(!gesMap[chKey])gesMap[chKey]=[];
+        gesMap[chKey].push({cliente:c[0],razon:c[1],chofer:r.ch,fecha:r.f,imp:Math.abs(c[5])});
       }
     });
   });
 
   // Cross reference with PWA
   var matched=[], soloGes=[], soloPwa=[];
-  var gesKeys = Object.keys(gesMap);
-
   pwaRows.forEach(function(p){
-    var fechaPwa = p.fecha||'';
-    if(fechaPwa.indexOf('/')>0){
-      // DD/MM/YYYY -> YYYY-MM-DD
-      var parts=fechaPwa.split('/');
-      if(parts.length===3) fechaPwa=parts[2]+'-'+parts[1]+'-'+parts[0];
+    // Map sheet column names (case-insensitive)
+    var fecha = p['Fecha']||p['fecha']||'';
+    var chofer= (p['Chofer']||p['chofer']||'').trim().toUpperCase();
+    var cliente=p['CLIENTE']||p['Cliente']||p['cliente']||'';
+    var motivo= p['Motivo']||p['motivo']||'';
+    var obs   = p['Observacion']||p['observacion']||'';
+    var foto  = p['Foto']||p['foto']||'';
+    var resp  = p['Respuesta Vendedor']||p['respuesta_vendedor']||p['resp']||'';
+    var estado= p['Estado']||p['estado']||'';
+    // Normalize fecha DD/MM/YYYY -> YYYY-MM-DD
+    var fechaNorm = fecha;
+    if(fecha && fecha.indexOf('/')>0){
+      var parts=fecha.split('/');
+      if(parts.length===3) fechaNorm=parts[2]+'-'+('0'+parts[1]).slice(-2)+'-'+('0'+parts[0]).slice(-2);
     }
-    var key = String(p.cliente)+'_'+fechaPwa;
-    if(gesMap[key]){
-      matched.push({pwa:p, ges:gesMap[key], key:key});
-      delete gesMap[key];
-    } else {
-      soloPwa.push(p);
-    }
+    var key = chofer+'_'+fechaNorm;
+    p._chofer=chofer; p._fecha=fechaNorm; p._motivo=motivo; 
+    p._obs=obs; p._foto=foto; p._resp=resp; p._estado=estado; p._cliente=cliente;
+    if(gesMap[key]&&gesMap[key].length>0){
+      matched.push({pwa:p,ges:gesMap[key].shift()});
+      if(!gesMap[key].length)delete gesMap[key];
+    } else soloPwa.push(p);
   });
-  Object.values(gesMap).forEach(function(g){ soloGes.push(g); });
+  Object.values(gesMap).forEach(function(arr){arr.forEach(function(g){soloGes.push(g);});});
 
   // KPIs
   document.getElementById('conc-kpis').innerHTML=
@@ -582,17 +590,17 @@ function renderConciliacion(){
 
   // Conciliacion table
   var rows = matched.map(function(m){
-    var resp = m.pwa.respuesta_vendedor||m.pwa.resp||'';
+    var resp = m.pwa._resp||'';
     var est  = resp ? BD('bg','Gestionado') : BD('br','Sin respuesta');
-    var fecha = fmtFecha(m.ges.fecha);
     return '<tr>'+
-      '<td>'+fecha+'</td>'+
+      '<td>'+fmtFecha(m.ges.fecha)+'</td>'+
       '<td><strong>'+m.ges.razon+'</strong></td>'+
       '<td>'+m.ges.chofer+'</td>'+
-      '<td>'+BD('br',m.pwa.motivo||'-')+'</td>'+
-      '<td style="font-size:.75rem">'+m.pwa.observacion+'</td>'+
+      '<td>'+BD('br',m.pwa._motivo||'-')+'</td>'+
+      '<td style="font-size:.75rem">'+m.pwa._obs+'</td>'+
       '<td>'+est+'</td>'+
       '<td style="font-size:.75rem;color:#94a3b8">'+resp+'</td>'+
+      '<td>'+(m.pwa._foto?'<a href="'+m.pwa._foto+'" target="_blank" style="color:#3b82f6">&#128247;</a>':'-')+'</td>'+
       '<td style="text-align:right;color:#ef4444">$'+F(m.ges.imp)+'</td></tr>';
   });
   var soloGesRows = soloGes.map(function(g){
