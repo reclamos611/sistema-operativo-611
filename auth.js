@@ -150,8 +150,10 @@ function renderRejAll(){
   var nT=pm.reduce(function(s,p){return s+p.no_e;},0);
   var eT=fT>0?fT/(fT+nT):0;
 
+  var tonTotal=(D_ROUTES.reduce(function(s,r){return s+(r.kg||0);},0)/1000).toFixed(1);
   document.getElementById('rej-kpis').innerHTML=
     KPI('$'+F(vT),'Venta Total','#34d399')+
+    KPI(tonTotal+' tn','Toneladas','#3b82f6')+
     KPI('$'+F(rT),'Rechazo ($)','#ef4444')+
     KPI(P2(vT>0?rT/vT:0),'% Rechazo',(vT>0&&rT/vT>.03)?'#ef4444':'#fb923c')+
     KPI(String(fT),'Pedidos Facturados','#e2e8f0')+
@@ -520,7 +522,7 @@ function loadPWA(){
   if(!cont) return;
   load.style.display='block'; cont.style.display='none'; err.style.display='none';
 
-  fetch(SHEETS_API, {method:'GET',mode:'cors'})
+  fetch(SHEETS_API+'?action=get', {method:'GET',mode:'cors',redirect:'follow'})
     .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(data){
       pwaRows = Array.isArray(data)?data:(data.rechazos||data.data||[]);

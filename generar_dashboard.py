@@ -175,11 +175,9 @@ for rep_id, grp in vc.groupby('reparto'):
     pep  = float(vgrp[vgrp['proveedor']==PEPSICO]['Importe'].sum())
     mol  = float(vgrp[vgrp['proveedor']==MOLINOS]['Importe'].sum())
     sof  = float(vgrp[vgrp['proveedor']==SOFTYS]['Importe'].sum())
-    # Peso: cantxcap ya esta en kg (valores tipicos 0.06-0.65 kg)
+    # Peso: cantxcap ya es el peso total de la linea (sumar directo)
     if 'cantxcap' in vgrp.columns:
-        kg_unit = pd.to_numeric(vgrp['cantxcap'], errors='coerce').fillna(0)
-        kg_unit = kg_unit.clip(0, 25)  # max 25kg por unidad, excluye outliers
-        kg_tot  = float((kg_unit * vgrp['Cantidad'].abs()).sum())
+        kg_tot = float(pd.to_numeric(vgrp['cantxcap'], errors='coerce').fillna(0).clip(0, 5000).sum())
     else:
         kg_tot = 0.0
     clientes = []
@@ -271,7 +269,8 @@ if mov_path:
     dep_col  = 'deposito_nombre' if 'deposito_nombre' in mov.columns else None
 
     # Usar deposito_nombre para clasificar (col J del Excel)
-    tra = mov[(mov[tipo_col]=='TRA') & (mov['stockmov_cantidad']<0)].copy()
+    # Roturas/Consumo/Vencido tienen qty POSITIVA (entran al deposito destino)
+    tra = mov[mov[tipo_col]=='TRA'].copy() if dep_col else pd.DataFrame()
     if dep_col and len(tra):
         rot  = tra[tra[dep_col].astype(str).str.lower().str.contains('rotura',  na=False)]
         cons = tra[tra[dep_col].astype(str).str.lower().str.contains('consumo', na=False)]
