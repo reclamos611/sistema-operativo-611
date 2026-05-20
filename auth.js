@@ -150,19 +150,8 @@ function renderRejAll(){
   var nT=pm.reduce(function(s,p){return s+p.no_e;},0);
   var eT=fT>0?fT/(fT+nT):0;
 
-  // Toneladas: filtrar rutas por proveedor si hay filtro activo
-  var tonTotal;
-  if(selProv){
-    // Sum kg from routes where that proveedor had venta
-    // Use D_CHPROV to get choferes with that proveedor, then sum their routes
-    var chsConProv=Object.keys(D_CHPROV).filter(function(ch){
-      return (D_CHPROV[ch]||[]).some(function(m){return m.prov===selProv;});
-    });
-    tonTotal=(D_ROUTES.filter(function(r){return chsConProv.indexOf(r.ch)>=0;})
-      .reduce(function(s,r){return s+(r.kg||0);},0)/1000).toFixed(1);
-  } else {
-    tonTotal=(D_ROUTES.reduce(function(s,r){return s+(r.kg||0);},0)/1000).toFixed(1);
-  }
+  // Toneladas desde D_PROV (tiene kg por proveedor)
+  var tonTotal=(pm.reduce(function(s,p){return s+(p.kg||0);},0)/1000).toFixed(1);
   document.getElementById('rej-kpis').innerHTML=
     KPI('$'+F(vT),'Venta Total','#34d399')+
     KPI(tonTotal+' tn','Toneladas','#3b82f6')+

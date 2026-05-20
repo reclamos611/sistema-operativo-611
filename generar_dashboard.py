@@ -137,18 +137,22 @@ by_chofer = [{'ch':r['chofer'],'n':int(r['n']),'tot':int(r['total']),'imp':round
 
 def prov_met(df_p):
     if df_p.empty: return None
-    # Efectividad: neto por cliente+fecha. neto<=0 = no entregado
     cli_dia = df_p.groupby(['Cliente','Fecha'])['Importe'].sum().reset_index()
     padron = len(cli_dia)
     no_e   = int((cli_dia['Importe'] <= 0).sum())
     f      = padron - no_e
-    # Rechazo $: TODAS las devoluciones
     v=float(df_p[df_p['tipo_venta']=='Venta']['Importe'].sum())
     r=float(df_p[df_p['tipo_venta']=='Devolucion']['Importe'].sum())
     c=float(df_p[df_p['tipo_venta']=='Cambio']['Importe'].abs().sum())
+    # Kg para este proveedor
+    kg = 0.0
+    if 'cantxcap' in df_p.columns:
+        kg = float(pd.to_numeric(df_p[df_p['tipo_venta']=='Venta']['cantxcap'],
+                                 errors='coerce').fillna(0).clip(0,5000).sum())
     return {'venta':round(v,0),'rec':round(abs(r),0),'cam':round(c,0),
             'rec_pct':round(abs(r)/v,4) if v else 0,'cam_pct':round(c/v,4) if v else 0,
-            'fac':f,'no_e':no_e,'efect':round(f/padron,4) if padron else 0}
+            'fac':f,'no_e':no_e,'efect':round(f/padron,4) if padron else 0,
+            'kg':round(kg,1)}
 
 prov_metrics_list = []
 chofer_prov_map   = {}
