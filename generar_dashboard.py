@@ -183,7 +183,10 @@ for rep_id, grp in vc.groupby('reparto'):
     clientes = []
     for cli_id, cg in grp.groupby('Cliente'):
         tipos = list(cg['tipo_venta'].fillna('Venta'))
-        rt=all(t=='Devolucion' for t in tipos); dv='Devolucion' in tipos and not rt; cm2='Cambio' in tipos
+        venta_cli = float(cg[cg['tipo_venta']=='Venta']['Importe'].sum())
+        rt = venta_cli <= 0  # rechazo total = sin venta en este reparto
+        dv = 'Devolucion' in tipos and not rt
+        cm2 = 'Cambio' in tipos
         imp=int(cg[cg['tipo_venta']=='Venta']['Importe'].sum())
         cnt=int(cg[cg['tipo_venta']=='Venta']['Cantidad'].sum())
         raz=str(cg['Razon_Social'].iloc[0] or '')[:40]
@@ -192,9 +195,10 @@ for rep_id, grp in vc.groupby('reparto'):
         cmp=str(cg['Comprobante'].iloc[0] or '')
         fl=1 if rt else(2 if dv else(3 if cm2 else 0))
         clientes.append([si(cli_id),raz,dir2,loc,cmp,imp,cnt,fl])
-    # Rechazo total = clientes con neto <= 0 en este reparto (misma logica que efectividad)
-    rej_cli = grp.groupby('Cliente')['Importe'].sum()
-    rej=int((rej_cli <= 0).sum())
+    # Rechazo total = clientes sin venta en este reparto (venta neta = 0)
+    venta_x_cli = grp[grp['tipo_venta']=='Venta'].groupby('Cliente')['Importe'].sum()
+    todos_cli   = set(grp['Cliente'].unique())
+    rej = sum(1 for c in todos_cli if venta_x_cli.get(c,0) <= 0)
     route_index.append({'rep':si(rep_id),'ch':ch,'f':str(fec),'cam':cam,
         'n':len(clientes),'tot':round(tot,0),'rej':rej,'kg':round(kg_tot,1),
         'pep':round(pep,0),'mol':round(mol,0),'sof':round(float(vgrp[vgrp['proveedor']==SOFTYS]['Importe'].sum()),0),
