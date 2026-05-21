@@ -1,4 +1,4 @@
-// AUTH_START
+// \u2500\u2500 HELPERS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function F(n){return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});}
 function P(n){return (Number(n||0)*100).toFixed(1)+'%';}
 function P2(n){return (Number(n||0)*100).toFixed(2)+'%';}
@@ -15,7 +15,7 @@ function fmtFecha(s){
 }
 
 // \u2500\u2500 LOGIN \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-var USERS = {'sup':{'pass':'sup611','name':'Supervisor'}};
+var USERS={'sup':{'pass':'sup611','name':'Supervisor'}};
 function doLogin(){
   var u=(document.getElementById('lu').value||'').trim().toLowerCase();
   var p=(document.getElementById('lp').value||'').trim();
@@ -52,17 +52,14 @@ function initTab(id){
   else if(id==='ventas') initVentas();
   else if(id==='ruta') initRuta();
 }
-
-// \u2500\u2500 INIT APP \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function initApp(){
-  document.getElementById('hdr-periodo').textContent = D_PERIODO || '';
+  document.getElementById('hdr-periodo').textContent=D_PERIODO||'';
   INITED={};
   initTab('cartones');
 }
 
 // \u2500\u2500 CARTONES \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function initCart(){
-  // Build semana options with date ranges
   var semMap={};
   D_CART.forEach(function(r){
     var k='Sem '+r.semana;
@@ -74,52 +71,40 @@ function initCart(){
   semSel.innerHTML='<option value="">Todas las semanas</option>'+
     Object.keys(semMap).sort().map(function(k){
       var r=semMap[k];
-      var label=k+' ('+fmtFecha(r.min)+' - '+fmtFecha(r.max)+')';
-      return '<option value="'+k+'">'+label+'</option>';
+      return '<option value="'+k+'">'+k+' ('+fmtFecha(r.min)+' - '+fmtFecha(r.max)+')</option>';
     }).join('');
-
   var chs=[...new Set(D_CART.map(function(r){return r.chofer;}))].sort();
   var chSel=document.getElementById('cart-ch');
   chSel.innerHTML='<option value="">Todos</option>'+chs.map(function(c){return '<option>'+c+'</option>';}).join('');
   document.getElementById('cart-note').textContent='Cartones '+D_PERIODO;
   renderCart();
 }
-
 function renderCart(){
   var vista=document.getElementById('cart-vista').value;
   var ch=document.getElementById('cart-ch').value;
-  var sem=document.getElementById('cart-sem').value;  // e.g. "Sem 19"
+  var sem=document.getElementById('cart-sem').value;
   var semNum=sem?parseInt(sem.replace('Sem ','')):0;
-
   var rows=D_CART.filter(function(r){
-    if(ch && r.chofer!==ch) return false;
-    if(semNum && r.semana!==semNum) return false;
+    if(ch&&r.chofer!==ch)return false;
+    if(semNum&&r.semana!==semNum)return false;
     return true;
   });
-
   var agg={};
   rows.forEach(function(r){
     var key=vista==='mes'?r.chofer:vista==='sem'?(r.chofer+'|'+r.semana):(r.chofer+'|'+r.fecha);
     if(!agg[key])agg[key]={chofer:r.chofer,fecha:r.fecha,semana:r.semana,bs:0,bi:0};
     agg[key].bs+=r.b_sal; agg[key].bi+=r.b_ing;
   });
-
   var tot_bs=0,tot_bi=0;
-  var tbl=Object.values(agg).sort(function(a,b){
-    return a.chofer.localeCompare(b.chofer)||(a.fecha<b.fecha?-1:1);
-  }).map(function(r){
+  var tbl=Object.values(agg).sort(function(a,b){return a.chofer.localeCompare(b.chofer)||(a.fecha<b.fecha?-1:1);}).map(function(r){
     tot_bs+=r.bs; tot_bi+=r.bi;
     var pct=r.bs>0?r.bi/r.bs:0;
     var est=pct>=0.9?BD('bg','Bien'):pct>=0.7?BD('by','Regular'):BD('br','Bajo');
     var label=vista==='dia'?fmtFecha(r.fecha):vista==='sem'?'Sem '+r.semana:'';
-    return '<tr><td><strong>'+r.chofer+'</strong></td><td>'+label+'</td>'+
-      '<td>'+r.semana+'</td>'+
-      '<td style="text-align:right">'+r.bs+'</td>'+
-      '<td style="text-align:right">'+r.bi+'</td>'+
-      '<td>'+PR(pct,'#34d399',1)+' '+P(pct)+'</td>'+
-      '<td>'+est+'</td></tr>';
+    return '<tr><td><strong>'+r.chofer+'</strong></td><td>'+label+'</td><td>'+r.semana+'</td>'+
+      '<td style="text-align:right">'+r.bs+'</td><td style="text-align:right">'+r.bi+'</td>'+
+      '<td>'+PR(pct,'#34d399',1)+' '+P(pct)+'</td><td>'+est+'</td></tr>';
   }).join('');
-
   document.getElementById('cart-tbody').innerHTML=tbl||'<tr><td colspan="7" class="empty">Sin datos de cartones</td></tr>';
   var pctT=tot_bs>0?tot_bi/tot_bs:0;
   document.getElementById('cart-kpis').innerHTML=
@@ -128,8 +113,8 @@ function renderCart(){
     KPI(P(pctT),'% Retorno',pctT>=0.9?'#34d399':pctT>=0.7?'#fb923c':'#ef4444');
 }
 
+// \u2500\u2500 RECHAZOS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function initRej(){
-  // Proveedor selector
   var pSel=document.getElementById('rej-prov-f');
   if(pSel){
     pSel.innerHTML='<option value="">Todos los proveedores</option>'+
@@ -141,19 +126,16 @@ function initRej(){
 
 function renderRejAll(){
   var selProv=(document.getElementById('rej-prov-f')||{}).value||'';
-
-  // Filter prov metrics
   var pm=selProv?D_PROV.filter(function(p){return p.prov===selProv;}):D_PROV;
   var vT=pm.reduce(function(s,p){return s+p.venta;},0);
   var rT=pm.reduce(function(s,p){return s+p.rec;},0);
   var fT=pm.reduce(function(s,p){return s+p.fac;},0);
   var nT=pm.reduce(function(s,p){return s+p.no_e;},0);
   var eT=fT>0?fT/(fT+nT):0;
-
-  // Toneladas desde D_PROV (tiene kg por proveedor)
   var tonTotal=(pm.reduce(function(s,p){return s+(p.kg||0);},0)/1000).toFixed(1);
+
   document.getElementById('rej-kpis').innerHTML=
-    KPI('$'+F(vT),'Venta Total','#34d399')+
+    KPI('$'+F(vT),'Venta Neta','#34d399')+
     KPI(tonTotal+' tn','Toneladas','#3b82f6')+
     KPI('$'+F(rT),'Rechazo ($)','#ef4444')+
     KPI(P2(vT>0?rT/vT:0),'% Rechazo',(vT>0&&rT/vT>.03)?'#ef4444':'#fb923c')+
@@ -162,7 +144,6 @@ function renderRejAll(){
     KPI(P(eT),'Efectividad',eT<0.95?'#ef4444':'#34d399')+
     KPI(String(D_REINC.length),'Reincidentes','#fb923c');
 
-  // Por proveedor table
   document.getElementById('rej-prov-tb').innerHTML=pm.length?
     pm.sort(function(a,b){return b.venta-a.venta;}).map(function(p){
       return '<tr><td><strong>'+p.prov+'</strong></td>'+
@@ -176,73 +157,61 @@ function renderRejAll(){
         '<td>'+P(p.efect)+'</td></tr>';
     }).join(''):'<tr><td colspan="9" class="empty">Sin datos</td></tr>';
 
-  // Por motivo - filter by proveedor from gescom data
-  var motivos=D_MOTIVO;
-  if(selProv && window.D_GESCOM){
-    var gfilt=D_GESCOM.filter(function(g){return g.prov===selProv;});
-    var motMap={};
-    gfilt.forEach(function(g){
-      if(!motMap[g.motivo])motMap[g.motivo]={motivo:g.motivo,lineas:0,uds:0,imp:0};
-      motMap[g.motivo].lineas++; motMap[g.motivo].imp+=Math.abs(g.imp);
-    });
-    motivos=Object.values(motMap).sort(function(a,b){return b.imp-a.imp;});
-  }
-  var totImp=motivos.reduce(function(s,m){return s+m.imp;},0);
-  document.getElementById('rej-mot-tb').innerHTML=motivos.length?
-    motivos.map(function(m){
+  var totImp=D_MOTIVO.reduce(function(s,m){return s+m.imp;},0);
+  document.getElementById('rej-mot-tb').innerHTML=D_MOTIVO.length?
+    D_MOTIVO.map(function(m,idx){
       var pct=totImp>0?m.imp/totImp:0;
       var colors=['#ef4444','#f97316','#f59e0b','#84cc16','#22d3ee','#818cf8','#e879f9','#fb7185','#94a3b8'];
-      var colIdx=motivos.indexOf(m)%colors.length;
+      var col=colors[idx%colors.length];
       var barW=Math.round(pct*100);
       return '<tr>'+
         '<td><div style="display:flex;align-items:center;gap:8px">'+
-          '<div style="width:10px;height:10px;border-radius:50%;background:'+colors[colIdx]+';flex-shrink:0"></div>'+
+          '<div style="width:10px;height:10px;border-radius:50%;background:'+col+';flex-shrink:0"></div>'+
           '<strong>'+m.motivo+'</strong></div></td>'+
         '<td style="text-align:right;color:#ef4444;font-weight:700">$'+F(m.imp)+'</td>'+
         '<td style="text-align:right">'+F(m.uds)+' uds</td>'+
         '<td><div style="display:flex;align-items:center;gap:6px">'+
           '<div style="background:#1e2535;border-radius:4px;height:8px;width:100px;overflow:hidden">'+
-            '<div style="height:100%;border-radius:4px;background:'+colors[colIdx]+';width:'+barW+'%"></div>'+
+            '<div style="height:100%;border-radius:4px;background:'+col+';width:'+barW+'%"></div>'+
           '</div>'+
           '<span style="font-size:.78rem;color:#94a3b8;min-width:35px">'+P(pct)+'</span>'+
         '</div></td></tr>';
-    }).join(''):'<tr><td colspan="5" class="empty">Sin datos</td></tr>';
+    }).join(''):'<tr><td colspan="4" class="empty">Sin datos</td></tr>';
 
-  // Por chofer - filter
   var chData=D_CHOFER;
   if(selProv){
     var chMap={};
     Object.keys(D_CHPROV).forEach(function(ch){
       var pm2=(D_CHPROV[ch]||[]).filter(function(m){return m.prov===selProv;});
       if(!pm2.length)return;
-      var rr=pm2.reduce(function(s,m){return s+m.rec;},0);
-      var ff=pm2.reduce(function(s,m){return s+m.fac;},0);
-      var nn=pm2.reduce(function(s,m){return s+m.no_e;},0);
-      chMap[ch]={ch:ch,n:nn,tot:ff,imp:rr,pct:ff>0?nn/(ff+nn):0};
+      var cpList=pm2;
+      var vv=cpList.reduce(function(s,m){return s+m.venta;},0);
+      var rr=cpList.reduce(function(s,m){return s+m.rec;},0);
+      var ff=cpList.reduce(function(s,m){return s+m.fac;},0);
+      var nn=cpList.reduce(function(s,m){return s+m.no_e;},0);
+      chMap[ch]={ch:ch,vv:vv,rr:rr,ff:ff,nn:nn,pRec:vv>0?rr/vv:0,ef:ff>0?ff/(ff+nn):0};
     });
-    chData=Object.values(chMap).filter(function(r){return r.n>0||r.imp>0;}).sort(function(a,b){return b.imp-a.imp;});
+    chData=Object.values(chMap).filter(function(r){return r.vv>0;}).sort(function(a,b){return b.vv-a.vv;});
+  } else {
+    chData=Object.keys(D_CHPROV).map(function(ch){
+      var cpList=D_CHPROV[ch]||[];
+      var vv=cpList.reduce(function(s,m){return s+m.venta;},0);
+      var rr=cpList.reduce(function(s,m){return s+m.rec;},0);
+      var ff=cpList.reduce(function(s,m){return s+m.fac;},0);
+      var nn=cpList.reduce(function(s,m){return s+m.no_e;},0);
+      return {ch:ch,vv:vv,rr:rr,ff:ff,nn:nn,pRec:vv>0?rr/vv:0,ef:ff>0?ff/(ff+nn):0};
+    }).filter(function(r){return r.vv>0;}).sort(function(a,b){return b.vv-a.vv;});
   }
   document.getElementById('rej-ch-tb').innerHTML=chData.length?
     chData.map(function(c){
-      // Rechazo% = $ devolucion / $ venta (from chofer_prov)
-      var cpList = (D_CHPROV[c.ch]||[]).filter(function(m){return !selProv||m.prov===selProv;});
-      var venta_ch = cpList.reduce(function(s,m){return s+m.venta;},0);
-      var rec_ch   = cpList.reduce(function(s,m){return s+m.rec;},0);
-      var pctRec   = venta_ch>0 ? rec_ch/venta_ch : 0;
-      // Efectividad = fac / (fac + no_e)
-      var fac_ch = cpList.reduce(function(s,m){return s+m.fac;},0);
-      var noe_ch = cpList.reduce(function(s,m){return s+m.no_e;},0);
-      var efect  = fac_ch>0 ? fac_ch/(fac_ch+noe_ch) : 0;
       return '<tr><td><strong>'+c.ch+'</strong></td>'+
-        '<td style="text-align:right">$'+F(venta_ch)+'</td>'+
-        '<td style="text-align:right;color:#ef4444">$'+F(rec_ch)+'</td>'+
-        '<td>'+PR(pctRec,'#ef4444',0.05)+' '+P2(pctRec)+'</td>'+
-        '<td>'+P(efect)+'</td></tr>';
+        '<td style="text-align:right">$'+F(c.vv)+'</td>'+
+        '<td style="text-align:right;color:#ef4444">$'+F(c.rr)+'</td>'+
+        '<td>'+PR(c.pRec,'#ef4444',0.05)+' '+P2(c.pRec)+'</td>'+
+        '<td>'+P(c.ef)+'</td></tr>';
     }).join(''):'<tr><td colspan="5" class="empty">Sin datos</td></tr>';
 
-  // Reincidentes
   var reinc=D_REINC;
-  if(window.D_REINC_PROV&&selProv)reinc=D_REINC_PROV[selProv]||D_REINC;
   document.getElementById('rej-reinc-tb').innerHTML=reinc.length?
     reinc.map(function(r,i){
       return '<tr><td>'+(i+1)+'</td>'+
@@ -253,7 +222,7 @@ function renderRejAll(){
         '<td style="font-size:.75rem;color:#94a3b8">'+(r.vendedor||'-')+'</td>'+
         '<td style="font-size:.75rem;color:#94a3b8">'+r.choferes+'</td>'+
         '<td style="font-size:.73rem;color:#64748b">'+r.fechas+'</td></tr>';
-    }).join(''):'<tr><td colspan="7" class="empty">Sin reincidentes</td></tr>';
+    }).join(''):'<tr><td colspan="8" class="empty">Sin reincidentes</td></tr>';
 }
 
 function rejTab(id,btn){
@@ -268,26 +237,27 @@ function rejTab(id,btn){
 // \u2500\u2500 DEPOSITO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function initDep(){
   var dep=D_DEP;
-  var hasDep=dep.faltante.length||dep.sobrante.length||dep.roturas.length||dep.consumo.length;
+  var hasDep=dep.faltante.length||dep.sobrante.length||dep.roturas.length||dep.consumo.length||dep.vencido.length;
+  var noteEl=document.getElementById('dep-note');
   if(!hasDep){
-    document.getElementById('dep-note').textContent='Diferencias de Inventario \u2014 subi movimientos.xlsx para ver datos';
+    if(noteEl) noteEl.textContent='Diferencias de Inventario \u2014 subi movimientos.xlsx para ver datos';
     return;
   }
-  document.getElementById('dep-note').textContent='Diferencias de Inventario \u2014 '+D_PERIODO;
-
+  if(noteEl) noteEl.textContent='Diferencias de Inventario \u2014 '+D_PERIODO;
   var totFalt=dep.faltante.reduce(function(s,r){return s+r.tot;},0);
   var totSobr=dep.sobrante.reduce(function(s,r){return s+r.tot;},0);
   var totRot =dep.roturas.reduce(function(s,r){return s+r.tot;},0);
   var totCons=dep.consumo.reduce(function(s,r){return s+r.tot;},0);
-  var totVenc = dep.vencido ? dep.vencido.reduce(function(s,r){return s+r.tot;},0) : 0;
+  var totVenc=dep.vencido.reduce(function(s,r){return s+r.tot;},0);
   document.getElementById('dep-kpis').innerHTML=
     KPI('$'+F(totFalt-totSobr),'Merma Neta',(totFalt-totSobr)>0?'#ef4444':'#34d399')+
-    KPI('$'+F(totRot),         'Roturas',   totRot>0?'#ef4444':'#94a3b8')+
-    KPI('$'+F(totCons),        'Consumo Interno', totCons>0?'#fb923c':'#94a3b8')+
-    KPI('$'+F(totVenc),        'Vencido',   totVenc>0?'#ef4444':'#94a3b8');
-
+    KPI('$'+F(totRot),'Roturas',totRot>0?'#ef4444':'#94a3b8')+
+    KPI('$'+F(totCons),'Consumo Interno',totCons>0?'#fb923c':'#94a3b8')+
+    KPI('$'+F(totVenc),'Vencido',totVenc>0?'#ef4444':'#94a3b8');
   function renderDepTb(id,rows){
-    document.getElementById(id).innerHTML=rows.length?rows.map(function(r){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.innerHTML=rows.length?rows.map(function(r){
       return '<tr><td>'+r.desc+'</td><td style="color:#64748b">'+r.prov+'</td>'+
         '<td style="text-align:right">'+r.u+'</td>'+
         '<td style="text-align:right">$'+F(r.cu)+'</td>'+
@@ -299,7 +269,7 @@ function initDep(){
   renderDepTb('dep-sobr-tb',dep.sobrante);
   renderDepTb('dep-rot-tb', dep.roturas);
   renderDepTb('dep-cons-tb',dep.consumo);
-  renderDepTb('dep-venc-tb',dep.vencido||[]);
+  renderDepTb('dep-venc-tb',dep.vencido);
 }
 
 // \u2500\u2500 VENTAS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -310,20 +280,16 @@ function initVentas(){
   D_CHS.forEach(function(c){cSel.innerHTML+='<option value="'+c+'">'+c+'</option>';});
   renderVentas();
 }
-
 function renderVentas(){
   var selProv=document.getElementById('ven-prov').value;
   var selCh  =document.getElementById('ven-ch').value;
-  var vista  =document.getElementById('ven-vista').value;
-
-  // KPIs from prov_metrics filtered
+  var vista  =(document.getElementById('ven-vista')||{}).value||'mes';
   var pm=D_PROV.filter(function(p){return !selProv||p.prov===selProv;});
   var vT=pm.reduce(function(s,p){return s+p.venta;},0);
   var rT=pm.reduce(function(s,p){return s+p.rec;},0);
   var fT=pm.reduce(function(s,p){return s+p.fac;},0);
   var nT=pm.reduce(function(s,p){return s+p.no_e;},0);
   var eT=fT>0?fT/(fT+nT):0;
-
   document.getElementById('ven-kpis').innerHTML=
     KPI('$'+F(vT),'Venta Neta','#34d399')+
     KPI('$'+F(rT),'Rechazo ($)','#ef4444')+
@@ -331,8 +297,6 @@ function renderVentas(){
     KPI(String(fT),'Pedidos Facturados','#e2e8f0')+
     KPI(String(nT),'No Entregados',nT>0?'#ef4444':'#34d399')+
     KPI(P(eT),'Efectividad',eT<0.95?'#ef4444':'#34d399');
-
-  // Por proveedor table
   document.getElementById('ven-prov-tb').innerHTML=pm.length?
     pm.sort(function(a,b){return b.venta-a.venta;}).map(function(p){
       return '<tr><td><strong>'+p.prov+'</strong></td>'+
@@ -341,11 +305,8 @@ function renderVentas(){
         '<td>'+P2(p.rec_pct)+'</td>'+
         '<td>'+P(p.efect)+'</td></tr>';
     }).join(''):'<tr><td colspan="5" class="empty">Sin datos</td></tr>';
-
-  // Por chofer with vista (dia/semana/mes)
   var chRows=[];
   if(vista==='mes'){
-    // Aggregated total from D_CHPROV
     Object.keys(D_CHPROV).forEach(function(ch){
       if(selCh&&ch!==selCh)return;
       var cpList=(D_CHPROV[ch]||[]).filter(function(m){return !selProv||m.prov===selProv;});
@@ -354,41 +315,20 @@ function renderVentas(){
       cpList.forEach(function(m){vv+=m.venta;rr+=m.rec;ff+=m.fac;nn+=m.no_e;});
       chRows.push({lbl:ch,vv:vv,rr:rr,ff:ff,nn:nn,ef:ff>0?ff/(ff+nn):0,pRec:vv>0?rr/vv:0});
     });
-  } else if(vista==='sem'){
-    // By semana from D_CART data aggregated per chofer per semana
-    var semAgg={};
-    D_VENTA.forEach(function(v){
-      if(selCh&&v.ch!==selCh)return;
-      // D_VENTA doesn't have semana - show routes by week
-    });
-    // Use routes for semana aggregation
-    D_ROUTES.forEach(function(r){
-      if(selCh&&r.ch!==selCh)return;
-      var sem=getSemana(r.f);
-      var key=r.ch+'|'+sem;
-      if(!semAgg[key])semAgg[key]={lbl:'Sem '+sem+' - '+r.ch,ch:r.ch,sem:sem,tot:0,rej:0,n:0};
-      semAgg[key].tot+=r.tot; semAgg[key].rej+=r.rej; semAgg[key].n+=r.n;
-    });
-    Object.values(semAgg).forEach(function(r){
-      chRows.push({lbl:r.lbl,vv:r.tot,rr:0,ff:r.n,nn:r.rej,ef:r.n>0?r.n/(r.n+r.rej):0,pRec:0});
-    });
   } else {
-    // By dia from routes
     var diaAgg={};
     D_ROUTES.forEach(function(r){
       if(selCh&&r.ch!==selCh)return;
-      var key=r.f+'|'+r.ch;
-      if(!diaAgg[key])diaAgg[key]={lbl:fmtFecha(r.f)+' '+r.ch,vv:0,rr:0,ff:0,nn:0};
+      var key=vista==='sem'?('Sem '+getSemana(r.f)+' '+r.ch):(fmtFecha(r.f)+' '+r.ch);
+      if(!diaAgg[key])diaAgg[key]={lbl:key,vv:0,rr:0,ff:0,nn:0};
       diaAgg[key].vv+=r.tot; diaAgg[key].nn+=r.rej; diaAgg[key].ff+=r.n;
     });
     Object.values(diaAgg).forEach(function(r){
-      r.ef=r.ff>0?r.ff/(r.ff+r.nn):0;
-      r.pRec=0;
+      r.ef=r.ff>0?r.ff/(r.ff+r.nn):0; r.pRec=0; r.rr=0;
       chRows.push(r);
     });
     chRows.sort(function(a,b){return a.lbl.localeCompare(b.lbl);});
   }
-
   document.getElementById('ven-ch-tb').innerHTML=chRows.length?
     chRows.map(function(r){
       return '<tr><td><strong>'+r.lbl+'</strong></td>'+
@@ -398,13 +338,13 @@ function renderVentas(){
         '<td>'+P(r.ef)+'</td></tr>';
     }).join(''):'<tr><td colspan="5" class="empty">Sin datos</td></tr>';
 }
-
 function getSemana(dateStr){
   if(!dateStr)return 0;
   var d=new Date(dateStr); var jan1=new Date(d.getFullYear(),0,1);
   return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
 }
 
+// \u2500\u2500 HOJA DE RUTA \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 var fRoutes=[], selRep=null;
 function initRuta(){
   var fechas=[...new Set(D_ROUTES.map(function(r){return r.f;}))].sort();
@@ -423,31 +363,29 @@ function filtRuta(){
   var fCam=document.getElementById('ruta-cam').value;
   var fQ  =(document.getElementById('ruta-q').value||'').toLowerCase();
   fRoutes=D_ROUTES.filter(function(r){
-    if(fFec && r.f!==fFec) return false;
-    if(fCh  && r.ch!==fCh) return false;
-    if(fCam && String(r.cam)!==String(fCam)) return false;
+    if(fFec&&r.f!==fFec)return false;
+    if(fCh&&r.ch!==fCh)return false;
+    if(fCam&&String(r.cam)!==String(fCam))return false;
     if(fQ){
       var cls=D_CLI[String(r.rep)]||[];
-      return cls.some(function(c){
-        return c[1].toLowerCase().includes(fQ)||c[2].toLowerCase().includes(fQ);
-      });
+      return cls.some(function(c){return c[1].toLowerCase().includes(fQ)||c[2].toLowerCase().includes(fQ);});
     }
     return true;
   });
   renderSB();
-  if(selRep && fRoutes.find(function(r){return r.rep===selRep;})) selR(selRep);
-  else { selRep=null; document.getElementById('rdet').innerHTML='<div style="color:#475569;padding:20px">Seleccion\u00e1 un reparto</div>'; }
+  if(selRep&&fRoutes.find(function(r){return r.rep===selRep;}))selR(selRep);
+  else{selRep=null;document.getElementById('rdet').innerHTML='<div style="color:#475569;padding:20px">Seleccion\u00e1 un reparto</div>';}
 }
 function renderSB(){
   var el=document.getElementById('rsl');
   if(!fRoutes.length){el.innerHTML='<div class="empty">Sin repartos.</div>';return;}
   var tot=0; fRoutes.forEach(function(r){tot+=r.tot;});
-  el.innerHTML='<div style="font-size:.75rem;color:#64748b;padding:4px 0 8px">'+fRoutes.length+' repartos &mdash; $'+F(tot)+'</div>'+
+  el.innerHTML='<div style="font-size:.75rem;color:#64748b;padding:4px 0 8px">'+fRoutes.length+' repartos \u2014 $'+F(tot)+'</div>'+
   fRoutes.map(function(r){
     var on=selRep===r.rep;
     var cls2=D_CLI[String(r.rep)]||[];
-    var rejCount=cls2.filter(function(c){return c[7]>=1;}).length;
-    var rejTag=rejCount?'<span style="color:#ef4444">\u26a0 '+rejCount+' rej</span>':'';
+    var rejCount=cls2.filter(function(c){return c[7]===1;}).length;
+    var rejTag=rejCount?'<span style="color:#ef4444">\u26a0 '+rejCount+' rej total</span>':'';
     var totProv=r.pep+r.mol+r.sof+r.oth||1;
     var bar='<div class="provbar">'+
       (r.pep?'<div style="flex:'+(r.pep/totProv)+';background:#3b82f6"></div>':'')+
@@ -458,9 +396,9 @@ function renderSB(){
     return '<div class="ri'+(on?' on':'"')+'" onclick="selR('+r.rep+')">'+
       '<div class="ri-top"><span class="ri-ch">'+r.ch+'</span><span class="ri-rep">N\u00b0 '+r.rep+'</span></div>'+
       '<div class="ri-meta">'+
-        '<span>\uD83D\uDCC5 '+fmtFecha(r.f)+'</span>'+
-        '<span>\u26F8 Cam '+r.cam+'</span>'+
-        '<span>\uD83D\uDC65 '+r.n+' cli</span>'+
+        '<span>\ud83d\udcc5 '+fmtFecha(r.f)+'</span>'+
+        '<span>\u26f8 Cam '+r.cam+'</span>'+
+        '<span>\ud83d\udc65 '+r.n+' cli</span>'+
         (r.kg?'<span>'+r.kg.toFixed(1)+' kg</span>':'')+
         rejTag+
       '</div>'+
@@ -474,16 +412,18 @@ function selR(rep){
   var r=D_ROUTES.find(function(x){return x.rep===rep;});
   var cls=D_CLI[String(rep)]||[];
   if(!r){document.getElementById('rdet').innerHTML='<div class="empty">Sin datos</div>';return;}
+  var totProv=r.pep+r.mol+r.sof+r.oth||1;
   var fmap={0:{bd:'bg',lbl:'Entregado'},1:{bd:'br',lbl:'Rechazo Total'},2:{bd:'by',lbl:'Rechazo Parcial'},3:{bd:'bp',lbl:'Cambio'}};
   var html='<div style="margin-bottom:12px">'+
     '<div style="font-weight:800;font-size:1rem;margin-bottom:4px">Reparto N\u00b0 '+r.rep+' \u2014 '+r.ch+'</div>'+
-    '<div style="font-size:.78rem;color:#94a3b8">\uD83D\uDCC5 '+fmtFecha(r.f)+' &nbsp; \u26F8 Cam\u00f3n '+r.cam+'</div>'+
-    '<div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">'+
+    '<div style="font-size:.78rem;color:#94a3b8">\ud83d\udcc5 '+fmtFecha(r.f)+' &nbsp; \u26f8 Cami\u00f3n '+r.cam+'</div>'+
+    '<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">'+
       '<div class="kpi" style="min-width:80px"><div class="kpi-v" style="color:#34d399">'+cls.filter(function(c){return c[7]===0;}).length+'</div><div class="kpi-l">Entregados</div></div>'+
       '<div class="kpi" style="min-width:80px"><div class="kpi-v" style="color:#ef4444">'+cls.filter(function(c){return c[7]===1;}).length+'</div><div class="kpi-l">Rej. Total</div></div>'+
       '<div class="kpi" style="min-width:80px"><div class="kpi-v" style="color:#fb923c">'+cls.filter(function(c){return c[7]===2;}).length+'</div><div class="kpi-l">Rej. Parcial</div></div>'+
       '<div class="kpi" style="min-width:80px"><div class="kpi-v" style="color:#818cf8">'+cls.filter(function(c){return c[7]===3;}).length+'</div><div class="kpi-l">Cambios</div></div>'+
       '<div class="kpi" style="min-width:80px"><div class="kpi-v">'+cls.length+'</div><div class="kpi-l">Total</div></div>'+
+      '<div class="kpi" style="min-width:100px"><div class="kpi-v" style="color:#e2e8f0">$'+F(r.tot)+'</div><div class="kpi-l">Total $</div></div>'+
       (r.kg?'<div class="kpi" style="min-width:80px"><div class="kpi-v" style="color:#64748b">'+r.kg.toFixed(1)+'</div><div class="kpi-l">Kg</div></div>':'')+
     '</div>'+
     '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'+
@@ -492,7 +432,13 @@ function selR(rep){
       (r.sof?'<div class="kpi" style="min-width:90px;border-color:#10b981"><div class="kpi-v" style="color:#10b981;font-size:1rem">$'+F(r.sof)+'</div><div class="kpi-l">Softys</div></div>':'')+
       (r.oth?'<div class="kpi" style="min-width:90px;border-color:#475569"><div class="kpi-v" style="color:#94a3b8;font-size:1rem">$'+F(r.oth)+'</div><div class="kpi-l">Otros</div></div>':'')+
     '</div>'+
-    '</div></div>';
+    '<div class="provbar" style="height:8px;margin-top:8px;border-radius:4px">'+
+      (r.pep?'<div style="flex:'+(r.pep/totProv)+';background:#3b82f6"></div>':'')+
+      (r.mol?'<div style="flex:'+(r.mol/totProv)+';background:#8b5cf6"></div>':'')+
+      (r.sof?'<div style="flex:'+(r.sof/totProv)+';background:#10b981"></div>':'')+
+      (r.oth?'<div style="flex:'+(r.oth/totProv)+';background:#475569"></div>':'')+
+    '</div>'+
+    '</div>';
   html+=cls.map(function(c){
     var fm=fmap[c[7]]||fmap[0];
     return '<div class="cli-row">'+
@@ -508,115 +454,71 @@ function selR(rep){
   document.getElementById('rdet').innerHTML=html;
 }
 
-// \u2500\u2500 APP EN VIVO Y CONCILIACION \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-var SHEETS_API = 'https://script.google.com/macros/s/AKfycbxc4P4e6JqrpjkLg9LJn-rN1DX-i3Q7MS5jRh-_SuMRP3azTNlryg_Wvg1uQVKk5jJhkw/exec';
-var pwaRows = [];
-
+// \u2500\u2500 CONCILIACION \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+var pwaRows=[];
 function initConciliacion(){
-  // Use D_APP data loaded from Excel (Registro_de_Rechazos.xlsx)
-  var cont = document.getElementById('conc-content');
-  var load = document.getElementById('conc-loading');
-  if(!cont) return;
+  var cont=document.getElementById('conc-content');
+  var load=document.getElementById('conc-loading');
+  if(!cont)return;
   load.style.display='none'; cont.style.display='block';
-  pwaRows = window.D_APP || [];
+  pwaRows=window.D_APP||[];
   renderConciliacion();
 }
-
-function loadPWA(){
-  initConciliacion();
-}
+function loadPWA(){initConciliacion();}
 
 function renderConciliacion(){
-  // Build gescom index by cliente+fecha
-  var gesIdx = {};
-  (D_CHOFER||[]).forEach(function(g){
-    // Use D_REINC for client-level data
-  });
-  // Index gescom by comprobante -> {cliente, fecha, chofer, imp}
-  // We use D_ROUTES client data for cross-reference
-  var gesMap = {};
-  D_ROUTES.forEach(function(r){
-    var cls = D_CLI[String(r.rep)]||[];
-    cls.forEach(function(c){
-      if(c[7]===1){ // rechazo total
-        var chKey=r.ch.trim().toUpperCase()+'_'+r.f;
-        if(!gesMap[chKey])gesMap[chKey]=[];
-        gesMap[chKey].push({cliente:c[0],razon:c[1],chofer:r.ch,fecha:r.f,imp:Math.abs(c[5])});
-      }
-    });
-  });
+  var k=window.D_CONC?D_CONC.kpis:{};
+  var appGes =window.D_CONC?D_CONC.app_ges:[];
+  var appOnly=window.D_CONC?D_CONC.app_only:[];
+  var gesOnly=window.D_CONC?D_CONC.ges_only:[];
 
-  // Cross reference with PWA
-  var matched=[], soloGes=[], soloPwa=[];
-  pwaRows.forEach(function(p){
-    p._chofer = (p.chofer||p['Chofer']||'').trim().toUpperCase();
-    p._fecha  = p.fecha||'';
-    p._motivo = p.motivo||p['Motivo']||'';
-    p._obs    = p.obs||p['Observacion']||'';
-    p._foto   = p.foto||p['Foto']||'';
-    p._resp   = p.resp||p['Respuesta Vendedor']||'';
-    p._estado = p.estado||p['Estado']||'';
-    p._cliente= p.cliente||p['CLIENTE']||'';
-    var key = p._chofer+'_'+p._fecha;
-    if(gesMap[key]&&gesMap[key].length>0){
-      matched.push({pwa:p,ges:gesMap[key].shift()});
-      if(!gesMap[key].length)delete gesMap[key];
-    } else soloPwa.push(p);
-  });
-  Object.values(gesMap).forEach(function(arr){arr.forEach(function(g){soloGes.push(g);});});
-
-  // KPIs
   document.getElementById('conc-kpis').innerHTML=
-    KPI(String(matched.length),'Gestionados (App+Gescom)','#34d399')+
-    KPI(String(soloGes.length),'Solo en Gescom (sin gestion)','#ef4444')+
-    KPI(String(soloPwa.length),'Solo en App','#fb923c')+
-    KPI(String(pwaRows.length),'Total en App','#e2e8f0');
+    KPI(String(k.total_app||0),'Rechazos en App','#e2e8f0')+
+    KPI(String(k.app_ges||0)+' / $'+F(k.imp_app_ges||0),'\ud83d\udd34 App+Gescom (gestion\u00f3 y se perdi\u00f3)','#ef4444')+
+    KPI(String(k.app_only||0),'\ud83d\udfe2 App sin Gescom (se salv\u00f3)','#34d399')+
+    KPI(String(k.ges_only||0)+' / $'+F(k.imp_ges_only||0),'\u26ab Gescom sin App (sin gesti\u00f3n)','#64748b')+
+    KPI(String(k.with_resp||0),'Vendedores con respuesta','#3b82f6')+
+    KPI(String(k.sin_resp||0),'Vendedores sin respuesta','#fb923c')+
+    KPI((k.pct_saved||0)+'%','% Gestiones salvadas','#34d399');
 
-  // Conciliacion table
-  var rows = matched.map(function(m){
-    var resp = m.pwa._resp||'';
-    var est  = resp ? BD('bg','Gestionado') : BD('br','Sin respuesta');
+  var rowsAG=appGes.map(function(r){
+    var est=r.resp?BD('bg','Con respuesta'):BD('br','Sin respuesta');
     return '<tr>'+
-      '<td>'+fmtFecha(m.ges.fecha)+'</td>'+
-      '<td><strong>'+m.ges.razon+'</strong></td>'+
-      '<td>'+m.ges.chofer+'</td>'+
-      '<td>'+BD('br',m.pwa._motivo||'-')+'</td>'+
-      '<td style="font-size:.75rem">'+m.pwa._obs+'</td>'+
+      '<td>'+fmtFecha(r.fecha)+'</td>'+
+      '<td><strong>'+r.chofer+'</strong></td>'+
+      '<td style="font-size:.75rem;color:#94a3b8">'+r.clientes+'</td>'+
+      '<td>'+BD('br',r.motivo||'-')+'</td>'+
       '<td>'+est+'</td>'+
-      '<td style="font-size:.75rem;color:#94a3b8">'+resp+'</td>'+
-      '<td>'+(m.pwa._foto?'<a href="'+m.pwa._foto+'" target="_blank" style="color:#3b82f6">&#128247;</a>':'-')+'</td>'+
-      '<td style="text-align:right;color:#ef4444">$'+F(m.ges.imp)+'</td></tr>';
+      '<td style="font-size:.75rem;color:#94a3b8">'+r.resp+'</td>'+
+      '<td style="text-align:right;color:#ef4444">$'+F(r.imp)+'</td></tr>';
   });
-  var soloGesRows = soloGes.map(function(g){
-    return '<tr style="opacity:.7">'+
-      '<td>'+fmtFecha(g.fecha)+'</td>'+
-      '<td><strong>'+g.razon+'</strong></td>'+
-      '<td>'+g.chofer+'</td>'+
-      '<td>'+BD('by','Sin registro app')+'</td>'+
-      '<td style="color:#64748b">No cargado por chofer</td>'+
-      '<td>'+BD('br','Sin gestion')+'</td>'+
-      '<td>-</td><td>-</td>'+
-      '<td style="text-align:right;color:#ef4444">$'+F(g.imp)+'</td></tr>';
+  var rowsGO=gesOnly.map(function(r){
+    return '<tr>'+
+      '<td>'+fmtFecha(r.fecha)+'</td>'+
+      '<td><strong>'+r.chofer+'</strong></td>'+
+      '<td style="font-size:.75rem;color:#94a3b8">'+r.clientes+'</td>'+
+      '<td>'+BD('by','Sin gesti\u00f3n')+'</td>'+
+      '<td>'+BD('br','Sin App')+'</td>'+
+      '<td>-</td>'+
+      '<td style="text-align:right;color:#ef4444">$'+F(r.imp)+'</td></tr>';
   });
-  document.getElementById('conc-tbody').innerHTML = rows.concat(soloGesRows).join('') ||
-    '<tr><td colspan="9" class="empty">Sin datos</td></tr>';
+  document.getElementById('conc-tbody').innerHTML=rowsAG.concat(rowsGO).join('')||
+    '<tr><td colspan="7" class="empty">Sin datos de conciliaci\u00f3n</td></tr>';
 
-  // Plan de accion
-  var chPlan = {};
-  soloGes.forEach(function(g){
-    if(!chPlan[g.chofer])chPlan[g.chofer]={ch:g.chofer,n:0,imp:0};
-    chPlan[g.chofer].n++; chPlan[g.chofer].imp+=g.imp;
+  var chPlan={};
+  gesOnly.forEach(function(r){
+    if(!chPlan[r.chofer])chPlan[r.chofer]={ch:r.chofer,n:0,imp:0};
+    chPlan[r.chofer].n++; chPlan[r.chofer].imp+=r.imp;
   });
-  var planRows = Object.values(chPlan).sort(function(a,b){return b.n-a.n;}).slice(0,10);
-  document.getElementById('plan-tbody').innerHTML = planRows.length ?
-    planRows.map(function(r,i){
-      var urgencia = r.n>5?BD('br','Urgente'):r.n>2?BD('by','Atencion'):BD('bp','Revisar');
-      return '<tr>'+
-        '<td>'+(i+1)+'</td>'+
+  var plan=Object.values(chPlan).sort(function(a,b){return b.imp-a.imp;}).slice(0,10);
+  document.getElementById('plan-tbody').innerHTML=plan.length?
+    plan.map(function(r,i){
+      var urg=r.n>5?BD('br','Urgente'):r.n>2?BD('by','Atenci\u00f3n'):BD('bp','Revisar');
+      return '<tr><td>'+(i+1)+'</td>'+
         '<td><strong>'+r.ch+'</strong></td>'+
         '<td style="text-align:right;color:#ef4444">'+r.n+'</td>'+
         '<td style="text-align:right">$'+F(r.imp)+'</td>'+
-        '<td>'+urgencia+'</td>'+
-        '<td style="font-size:.75rem;color:#94a3b8">Revisar '+r.n+' rechazo'+(r.n>1?'s':'')+' sin documentar</td></tr>';
-    }).join('') : '<tr><td colspan="6" class="empty">Sin alertas</td></tr>';
+        '<td>'+urg+'</td>'+
+        '<td style="font-size:.75rem;color:#94a3b8">'+r.n+' rechazo'+(r.n>1?'s':'')+' sin documentar</td></tr>';
+    }).join(''):'<tr><td colspan="6" class="empty">Sin alertas</td></tr>';
 }
