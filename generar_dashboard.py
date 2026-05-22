@@ -264,11 +264,21 @@ rej_cli = (vc[vc['Comprobante'].isin(rej_comps2)]
                 choferes=('chofer', lambda x: ', '.join(sorted(set(str(v) for v in x))[:3])),
                 fechas=('fecha_str', lambda x: ', '.join(sorted(set(str(v) for v in x))[:5])))
            .reset_index())
+# Proveedores con mayor rechazo por cliente
+rej_prov_cli = (vc[vc['Comprobante'].isin(rej_comps2)]
+                .groupby(['Cliente','proveedor'])['importe_neto'].sum().abs()
+                .reset_index().sort_values('importe_neto',ascending=False))
+prov_por_cli = {}
+for cli, grp in rej_prov_cli.groupby('Cliente'):
+    prov_por_cli[int(cli)] = [{'prov':str(r['proveedor']),'imp':round(float(r['importe_neto']),0)}
+                               for _,r in grp.head(3).iterrows()]
+
 reinc_list = [{'cid':int(r['Cliente']),'razon':str(r['razon'])[:35],
                'loc':str(r['loc'])[:22] if r['loc'] else '',
                'n':int(r['n']),'imp':round(float(abs(r['imp'])),0),
                'vendedor':str(int(r['vendedor'])) if pd.notna(r.get('vendedor')) and r.get('vendedor') != '' else '-',
-               'choferes':str(r['choferes'])[:40],'fechas':str(r['fechas'])}
+               'choferes':str(r['choferes'])[:40],'fechas':str(r['fechas']),
+               'provs': prov_por_cli.get(int(r['Cliente']),[]) }
               for _,r in rej_cli[rej_cli['n']>1].sort_values('n',ascending=False).head(50).iterrows()]
 
 # ── CARTONES ──────────────────────────────────────────────────────────────────
@@ -365,7 +375,7 @@ if app_path:
                 'chofer':g['chofer'],'fecha':g['fecha'],'imp':g['imp']})
         with_resp = sum(1 for r in conc_data['app_ges'] if r.get('resp',''))
         sin_resp  = sum(1 for r in conc_data['app_ges'] if not r.get('resp',''))
-        pct_saved = round(len(conc_data['app_only'])/(len(conc_data['app_only'])+len(conc_data['ges_only']))*100,1) if (len(conc_data['app_only'])+len(conc_data['ges_only']))>0 else 0
+        pct_saved = round(len(conc_data['app_only'])/len(app_dict)*100,1) if len(app_dict)>0 else 0
         conc_data['kpis'] = {
             'app_ges':len(conc_data['app_ges']),'app_only':len(conc_data['app_only']),'ges_only':len(conc_data['ges_only']),
             'imp_app_ges':round(sum(r['imp'] for r in conc_data['app_ges']),0),
@@ -398,7 +408,8 @@ if mov_path:
             for _,r in df_m.iterrows():
                 u=abs(sf(r.get('stockmov_cantidad',r.get('cantidad',0))))
                 cu=sf(r.get('costo',0))
-                rows.append({'desc':str(r.get('descripcion',''))[:50],'prov':get_prov(r.get('articulo_codigo',r.get('codigo',0))),
+                pv=get_prov(r.get('articulo_codigo',r.get('codigo',0)))
+                rows.append({'desc':str(r.get('descripcion',''))[:50],'prov':pv,
                               'u':int(u),'cu':round(cu,2),'tot':round(u*cu,2),'fecha':periodo_label})
             return rows
         tipo_col = 'stockmov_tipo' if 'stockmov_tipo' in mov.columns else 'tipo'
@@ -421,10 +432,10 @@ if mov_path:
             con_pos=con_net[con_net['neto']>0].copy(); con_pos['u']=con_pos['neto']
             dep_data['faltante']=[{'desc':str(r['descripcion'])[:50],'prov':str(r['prov']),
                 'u':int(r['u']),'cu':round(float(r['cu']),2),'tot':round(float(r['u']*r['cu']),2),'fecha':periodo_label}
-                for _,r in con_neg.iterrows()]
+                for _,r in con_neg.sort_values('u',ascending=False).iterrows()]
             dep_data['sobrante']=[{'desc':str(r['descripcion'])[:50],'prov':str(r['prov']),
                 'u':int(r['u']),'cu':round(float(r['cu']),2),'tot':round(float(r['u']*r['cu']),2),'fecha':periodo_label}
-                for _,r in con_pos.iterrows()]
+                for _,r in con_pos.sort_values('u',ascending=False).iterrows()]
         print(f"  Deposito: {len(dep_data['faltante'])} falt, {len(dep_data['sobrante'])} sobr, {len(dep_data['roturas'])} rot, {len(dep_data['consumo'])} cons, {len(dep_data['vencido'])} venc")
     except Exception as e:
         print(f"  Deposito: error {e}")
