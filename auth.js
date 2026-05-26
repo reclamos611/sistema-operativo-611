@@ -318,8 +318,10 @@ function initDep(){
   var tRot =fRot.reduce(function(s,r){return s+r.tot;},0);
   var tCons=fCons.reduce(function(s,r){return s+r.tot;},0);
   var tVenc=fVenc.reduce(function(s,r){return s+r.tot;},0);
-  // % CMV calculado sobre los montos filtrados
-  var ventaBase=D_KPIS.imp_venta||1;
+  // % CMV sobre venta del proveedor seleccionado (o total si no hay filtro)
+  var ventaBase=selDepProv?
+    (D_PROV.find(function(p){return p.prov===selDepProv;})||{}).venta||1 :
+    D_KPIS.imp_venta||1;
   function pctCMV(v){return ventaBase>0?(' ('+((v/ventaBase)*100).toFixed(2)+'% CMV)'):''}
   document.getElementById('dep-kpis').innerHTML=
     KPI('$'+F(tFalt-tSobr)+pctCMV(Math.abs(tFalt-tSobr)),'Merma Neta',(tFalt-tSobr)>0?'#ef4444':'#34d399')+
