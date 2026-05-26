@@ -116,9 +116,11 @@ if 'cantxcap'     not in vc.columns: vc['cantxcap']     = 0
 # Importe neto = neto (col M) x cantidad (col F)
 if 'neto' in vc.columns:
     vc['neto']         = pd.to_numeric(vc['neto'], errors='coerce').fillna(0)
-    vc['importe_neto'] = vc['neto'] * vc['Cantidad']   # signed, no abs()
+    vc['importe_neto']  = vc['Importe']                 # con signo original
+    vc['importe_efect'] = vc['neto'] * vc['Cantidad']  # signed para efectividad
 else:
-    vc['importe_neto'] = vc['Importe']
+    vc['importe_neto']  = vc['Importe']
+    vc['importe_efect'] = vc['Importe']
 
 vc['chofer_up'] = vc['chofer'].str.strip().str.upper()
 
@@ -138,21 +140,24 @@ comp_cls['all_dev']   = comp_cls['tipo_venta'].apply(lambda ts: all(t=='Devoluci
 comp_cls['has_venta'] = comp_cls['tipo_venta'].apply(lambda ts: 'Venta' in ts)
 rej_comps = set(comp_cls[comp_cls['all_dev']]['Comprobante'])
 
-venta_tot   = float(vc[vc['importe_neto'] > 0]['importe_neto'].sum())
-all_dev_imp = float(vc[vc['importe_neto'] < 0]['importe_neto'].sum())
-cam_tot     = float(vc[vc['tipo_venta']=='Cambio']['importe_neto'].sum())
-venta_neta  = venta_tot + all_dev_imp  # all_dev_imp is already negative
+venta_tot   = float(vc[vc['tipo_venta']=='Venta']['Importe'].sum())
+all_dev_imp = float(vc[vc['tipo_venta']=='Devolucion']['Importe'].abs().sum())
+cam_tot     = float(vc[vc['tipo_venta']=='Cambio']['Importe'].abs().sum())
+venta_neta  = venta_tot - all_dev_imp - cam_tot
 
-# Efectividad global: cliente+reparto+proveedor, signed neto, excl Cantidad=0
+# Efectividad global: cliente+reparto+proveedor, signed neto precio*cant, excl Cantidad=0
 vc_e = vc[vc['Cantidad'] != 0]
-cli_rep_prov  = vc_e.groupby(['Cliente','reparto','proveedor'])['importe_neto'].sum()
+cli_rep_prov  = vc_e.groupby(['Cliente','reparto','proveedor'])['importe_efect'].sum()
 padron_global = len(cli_rep_prov)
 no_e_global   = int((cli_rep_prov <= 0).sum())
 fac_global    = padron_global - no_e_global
 
+# Costo de mercaderia vendida (Importe ventas) para % inventario
+costo_venta = venta_tot  # Ventas brutas como base para CMV %
+
 rej_kpis = {
     'imp_venta':   round(venta_neta,0),
-    'imp_dev':     round(abs(all_dev_imp),0),
+    'imp_dev':     round(all_dev_imp,0),
     'pct_rechazo': round(abs(all_dev_imp)/venta_tot,4) if venta_tot else 0,
     'cam_imp':     round(abs(cam_tot),0),
     'cam_pct':     round(abs(cam_tot)/venta_tot,4) if venta_tot else 0,
@@ -160,12 +165,23 @@ rej_kpis = {
     'efect': round(fac_global/padron_global,4) if padron_global else 0
 }
 
-bm = dev.groupby('motivo_desc').agg(lineas=('Importe','count'),uds=('Cantidad','sum'),isum=('importe_neto','sum')).reset_index()
+bm = dev.groupby('motivo_desc').agg(lineas=('Importe','count'),uds=('Cantidad','sum'),isum=('Importe','sum')).reset_index()
 bm['isum'] = bm['isum'].abs()
 by_motivo = [{'motivo':r['motivo_desc'],'lineas':int(r['lineas']),'uds':int(abs(r['uds'])),'imp':round(float(r['isum']),0)}
              for _,r in bm.sort_values('isum',ascending=False).iterrows()]
 
-bc = vc[vc['Comprobante'].isin(rej_comps)].groupby('chofer').agg(n=('Comprobante','nunique'),imp=('importe_neto','sum')).reset_index()
+# Motivo por proveedor
+motivo_prov = {}
+for p in sorted(vc['proveedor'].dropna().str.strip().unique()):
+    dev_p = vc[(vc['tipo_venta']=='Devolucion') & (vc['proveedor'].str.strip()==p)].copy()
+    dev_p['motivo_desc'] = dev_p['motivodev'].map(MOTIVO_MAP).fillna('Otro')
+    bmp = dev_p.groupby('motivo_desc').agg(lineas=('Importe','count'),uds=('Cantidad','abs'),isum=('Importe','sum')).reset_index()
+    bmp['isum'] = bmp['isum'].abs()
+    motivo_prov[str(p)] = [{'motivo':r['motivo_desc'],'lineas':int(r['lineas']),'uds':int(abs(r['uds'])),'imp':round(float(r['isum']),0)}
+                            for _,r in bmp.sort_values('isum',ascending=False).iterrows() if r['isum']>0]
+
+bc = vc[vc['tipo_venta']=='Devolucion'].groupby('chofer').agg(n=('Comprobante','nunique'),imp=('Importe','sum')).reset_index()
+bc['imp'] = bc['imp'].abs()
 tot_ch = comp_cls.merge(vc[['Comprobante','chofer']].drop_duplicates(),on='Comprobante',how='left')
 tot_ch = tot_ch[tot_ch['has_venta']].groupby('chofer').size().reset_index(name='total')
 bc = bc.merge(tot_ch,on='chofer',how='left').fillna({'total':0})
@@ -175,13 +191,13 @@ by_chofer = [{'ch':r['chofer'],'n':int(r['n']),'tot':int(r['total']),'imp':round
 
 def prov_met(df_p):
     if df_p.empty: return None
-    # Efectividad: cliente+reparto, signed neto, excl Cantidad=0
+    # Efectividad: cliente+reparto, signed neto precio*cant, excl Cantidad=0
     df_e = df_p[df_p['Cantidad'] != 0]
-    cli_rep = df_e.groupby(['Cliente','reparto'])['importe_neto'].sum()
+    cli_rep = df_e.groupby(['Cliente','reparto'])['importe_efect'].sum()
     padron = len(cli_rep); no_e = int((cli_rep <= 0).sum()); f = padron - no_e
-    v=float(df_p[df_p['importe_neto'] > 0]['importe_neto'].sum())
-    r=float(df_p[df_p['importe_neto'] < 0]['importe_neto'].sum())
-    c=float(df_p[df_p['tipo_venta']=='Cambio']['importe_neto'].sum())
+    v=float(df_p[df_p['tipo_venta']=='Venta']['Importe'].sum())
+    r=float(df_p[df_p['tipo_venta']=='Devolucion']['Importe'].abs().sum())
+    c=float(df_p[df_p['tipo_venta']=='Cambio']['Importe'].abs().sum())
     kg=float(pd.to_numeric(df_p[df_p['tipo_venta']=='Venta']['cantxcap'],errors='coerce').fillna(0).clip(0,5000).sum()) if 'cantxcap' in df_p.columns else 0.0
     return {'venta':round(v,0),'rec':round(abs(r),0),'cam':round(abs(c),0),
             'rec_pct':round(abs(r)/v,4) if v else 0,'cam_pct':round(abs(c)/v,4) if v else 0,
@@ -208,27 +224,27 @@ for rep_id, grp in vc.groupby('reparto'):
     fec  = grp['fecha_str'].iloc[0]
     cam  = si(grp['camion'].iloc[0])
     vgrp = grp[grp['tipo_venta']=='Venta']
-    tot  = float(vgrp['importe_neto'].sum())
-    pep  = float(vgrp[vgrp['proveedor']==PEPSICO]['importe_neto'].sum())
-    mol  = float(vgrp[vgrp['proveedor']==MOLINOS]['importe_neto'].sum())
-    sof  = float(vgrp[vgrp['proveedor']==SOFTYS]['importe_neto'].sum())
+    tot  = float(vgrp['Importe'].sum())
+    pep  = float(vgrp[vgrp['proveedor']==PEPSICO]['Importe'].sum())
+    mol  = float(vgrp[vgrp['proveedor']==MOLINOS]['Importe'].sum())
+    sof  = float(vgrp[vgrp['proveedor']==SOFTYS]['Importe'].sum())
     oth  = tot - pep - mol - sof
     kg_tot = float(pd.to_numeric(vgrp['cantxcap'],errors='coerce').fillna(0).clip(0,5000).sum())
     # Rechazo total: cliente sin venta en este reparto
     # Rechazo total: unique (cliente+proveedor) con neto signed <= 0, excl cant=0
     grp_e = grp[grp['Cantidad'] != 0]
-    cli_prov_neto = grp_e.groupby(['Cliente','proveedor'])['importe_neto'].sum()
+    cli_prov_neto = grp_e.groupby(['Cliente','proveedor'])['importe_efect'].sum()
     rej = int((cli_prov_neto <= 0).sum())
     clientes = []
     for cli_id, cg in grp.groupby('Cliente'):
         tipos = list(cg['tipo_venta'].fillna('Venta'))
         # Rechazo total: neto signed (excl cant=0) <= 0 para este proveedor en reparto
         cg_e = cg[cg['Cantidad'] != 0]
-        neto_signed = float(cg_e['importe_neto'].sum())
+        neto_signed = float(cg_e['importe_efect'].sum())
         rt = neto_signed <= 0
         dv = 'Devolucion' in tipos and not rt
         cm2= 'Cambio' in tipos
-        imp = int(cg[cg['tipo_venta']=='Venta']['importe_neto'].sum())
+        imp = int(cg[cg['tipo_venta']=='Venta']['Importe'].sum())
         cnt = int(cg[cg['tipo_venta']=='Venta']['Cantidad'].sum())
         raz = str(cg['Razon_Social'].iloc[0] or '')[:40]
         dir2= str(cg['Direccion'].iloc[0] or '')[:40]
@@ -265,7 +281,7 @@ rej_cli = (vc[vc['Comprobante'].isin(rej_comps2)]
            .agg(n=('Comprobante','nunique'),
                 razon=('Razon_Social','first'),
                 loc=('localidad','first'),
-                imp=('importe_neto','sum'),
+                imp=('Importe','sum'),
                 vendedor=('cod_ven','first'),
                 choferes=('chofer', lambda x: ', '.join(sorted(set(str(v) for v in x))[:3])),
                 fechas=('fecha_str', lambda x: ', '.join(sorted(set(str(v) for v in x))[:5])))
@@ -395,7 +411,7 @@ else:
     print("  App rechazos: no encontrado (opcional)")
 
 # ── DEPOSITO ──────────────────────────────────────────────────────────────────
-dep_data = {'faltante':[],'sobrante':[],'roturas':[],'consumo':[],'vencido':[]}
+dep_data = {'faltante':[],'sobrante':[],'roturas':[],'consumo':[],'vencido':[],'kpis':{}}
 mov_path = find("movimientos.xlsx")
 if mov_path:
     try:
@@ -415,8 +431,10 @@ if mov_path:
                 u=abs(sf(r.get('stockmov_cantidad',r.get('cantidad',0))))
                 cu=sf(r.get('costo',0))
                 pv=get_prov(r.get('articulo_codigo',r.get('codigo',0)))
+                tot=round(u*cu,2)
+                pct=round(tot/costo_venta*100,4) if costo_venta else 0
                 rows.append({'desc':str(r.get('descripcion',''))[:50],'prov':pv,
-                              'u':int(u),'cu':round(cu,2),'tot':round(u*cu,2),'fecha':periodo_label})
+                              'u':int(u),'cu':round(cu,2),'tot':tot,'pct':pct,'fecha':periodo_label})
             return rows
         tipo_col = 'stockmov_tipo' if 'stockmov_tipo' in mov.columns else 'tipo'
         dep_col  = 'deposito_nombre' if 'deposito_nombre' in mov.columns else None
@@ -437,11 +455,24 @@ if mov_path:
             con_neg=con_net[con_net['neto']<0].copy(); con_neg['u']=con_neg['neto'].abs()
             con_pos=con_net[con_net['neto']>0].copy(); con_pos['u']=con_pos['neto']
             dep_data['faltante']=[{'desc':str(r['descripcion'])[:50],'prov':str(r['prov']),
-                'u':int(r['u']),'cu':round(float(r['cu']),2),'tot':round(float(r['u']*r['cu']),2),'fecha':periodo_label}
+                'u':int(r['u']),'cu':round(float(r['cu']),2),'tot':round(float(r['u']*r['cu']),2),'fecha':periodo_label,
+                'pct':round(float(r['u']*r['cu'])/costo_venta*100,4) if costo_venta else 0}
                 for _,r in con_neg.sort_values('u',ascending=False).iterrows()]
             dep_data['sobrante']=[{'desc':str(r['descripcion'])[:50],'prov':str(r['prov']),
-                'u':int(r['u']),'cu':round(float(r['cu']),2),'tot':round(float(r['u']*r['cu']),2),'fecha':periodo_label}
+                'u':int(r['u']),'cu':round(float(r['cu']),2),'tot':round(float(r['u']*r['cu']),2),'fecha':periodo_label,
+                'pct':round(float(r['u']*r['cu'])/costo_venta*100,4) if costo_venta else 0}
                 for _,r in con_pos.sort_values('u',ascending=False).iterrows()]
+        tot_rot=sum(r['tot'] for r in dep_data['roturas'])
+        tot_cons=sum(r['tot'] for r in dep_data['consumo'])
+        tot_venc=sum(r['tot'] for r in dep_data['vencido'])
+        tot_falt=sum(r['tot'] for r in dep_data['faltante'])
+        tot_sobr=sum(r['tot'] for r in dep_data['sobrante'])
+        dep_data['kpis']={
+            'pct_rot':  round(tot_rot/costo_venta*100,4) if costo_venta else 0,
+            'pct_cons': round(tot_cons/costo_venta*100,4) if costo_venta else 0,
+            'pct_venc': round(tot_venc/costo_venta*100,4) if costo_venta else 0,
+            'pct_merma':round((tot_falt-tot_sobr)/costo_venta*100,4) if costo_venta else 0,
+        }
         print(f"  Deposito: {len(dep_data['faltante'])} falt, {len(dep_data['sobrante'])} sobr, {len(dep_data['roturas'])} rot, {len(dep_data['consumo'])} cons, {len(dep_data['vencido'])} venc")
     except Exception as e:
         print(f"  Deposito: error {e}")
@@ -457,6 +488,7 @@ conc_js = 'var D_CONC=' + json.dumps(conc_data, ensure_ascii=True, separators=('
 DATA_JS = '\n'.join([
     make_chunks('D_KPIS',   rej_kpis),
     make_chunks('D_MOTIVO', by_motivo),
+    make_chunks('D_MOTIVO_PROV', motivo_prov),
     make_chunks('D_CHOFER', by_chofer),
     make_chunks('D_PROV',   prov_metrics_list),
     make_chunks('D_CHPROV', chofer_prov_map),

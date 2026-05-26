@@ -304,11 +304,12 @@ function initDep(){
   var tRot =fRot.reduce(function(s,r){return s+r.tot;},0);
   var tCons=fCons.reduce(function(s,r){return s+r.tot;},0);
   var tVenc=fVenc.reduce(function(s,r){return s+r.tot;},0);
+  var dk=D_DEP.kpis||{};
   document.getElementById('dep-kpis').innerHTML=
-    KPI('$'+F(tFalt-tSobr),'Merma Neta',(tFalt-tSobr)>0?'#ef4444':'#34d399')+
-    KPI('$'+F(tRot),'Roturas',tRot>0?'#ef4444':'#94a3b8')+
-    KPI('$'+F(tCons),'Consumo Interno',tCons>0?'#fb923c':'#94a3b8')+
-    KPI('$'+F(tVenc),'Vencido',tVenc>0?'#ef4444':'#94a3b8');
+    KPI('$'+F(tFalt-tSobr)+(dk.pct_merma?' ('+Number(dk.pct_merma).toFixed(2)+'% CMV)':''),'Merma Neta',(tFalt-tSobr)>0?'#ef4444':'#34d399')+
+    KPI('$'+F(tRot)+(dk.pct_rot?' ('+Number(dk.pct_rot).toFixed(2)+'% CMV)':''),'Roturas',tRot>0?'#ef4444':'#94a3b8')+
+    KPI('$'+F(tCons)+(dk.pct_cons?' ('+Number(dk.pct_cons).toFixed(2)+'% CMV)':''),'Consumo Interno',tCons>0?'#fb923c':'#94a3b8')+
+    KPI('$'+F(tVenc)+(dk.pct_venc?' ('+Number(dk.pct_venc).toFixed(2)+'% CMV)':''),'Vencido',tVenc>0?'#ef4444':'#94a3b8');
   renderDepTb('dep-falt-tb',dep.faltante);
   renderDepTb('dep-sobr-tb',dep.sobrante);
   renderDepTb('dep-rot-tb', dep.roturas);
@@ -457,7 +458,7 @@ function selR(rep){
   var cls=D_CLI[String(rep)]||[];
   if(!r){document.getElementById('rdet').innerHTML='<div class="empty">Sin datos</div>';return;}
   var totProv=r.pep+r.mol+r.sof+r.oth||1;
-  var fmap={0:{bd:'bg',lbl:'Entregado'},1:{bd:'br',lbl:'Rechazo Total'},2:{bd:'by',lbl:'Rechazo Parcial'},3:{bd:'bp',lbl:'Cambio'}};
+  var fmap={0:{bd:'bg',lbl:'Entregado'},1:{bd:'br',lbl:'Rech. Total'},2:{bd:'by',lbl:'Rech. Parcial'},3:{bd:'bp',lbl:'Cambio'}};
   var html='<div style="margin-bottom:12px">'+
     '<div style="font-weight:800;font-size:1rem;margin-bottom:4px">Reparto N\u00b0 '+r.rep+' \u2014 '+r.ch+'</div>'+
     '<div style="font-size:.78rem;color:#94a3b8">\ud83d\udcc5 '+fmtFecha(r.f)+' &nbsp; \u26f8 Cami\u00f3n '+r.cam+'</div>'+
