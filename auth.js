@@ -1,3 +1,23 @@
+// \u2500\u2500 TIPO CHOFER FILTER
+function getActiveTipos(){
+  var tipos=[];
+  ['propio','backup','tercero'].forEach(function(t){
+    var el=document.getElementById('ftipo-'+t);
+    if(el&&el.checked)tipos.push(t);
+  });
+  return tipos.length?tipos:['propio','backup','tercero'];
+}
+function chMatchTipo(ch){
+  var tipos=getActiveTipos();
+  var t=(window.D_CH_TIPOS&&D_CH_TIPOS[ch])||'tercero';
+  return tipos.indexOf(t)>=0;
+}
+function onTipoChange(){
+  INITED={};
+  var secs=document.querySelectorAll('.sec.on');
+  secs.forEach(function(s){var id=s.id.replace('sec-','');initTab(id);});
+}
+
 // \u2500\u2500 HELPERS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function F(n){return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});}
 function P(n){return (Number(n||0)*100).toFixed(1)+'%';}
@@ -85,6 +105,7 @@ function renderCart(){
   var sem=document.getElementById('cart-sem').value;
   var semNum=sem?parseInt(sem.replace('Sem ','')):0;
   var rows=D_CART.filter(function(r){
+    if(!chMatchTipo(r.chofer))return false;
     if(ch&&r.chofer!==ch)return false;
     if(semNum&&r.semana!==semNum)return false;
     return true;
@@ -189,6 +210,7 @@ function renderRejAll(){
   var chData=[];
   if(vistaRej==='mes'){
     Object.keys(D_CHPROV).forEach(function(ch){
+      if(!chMatchTipo(ch))return;
       if(!selCh||ch===selCh){
         var cpList=(D_CHPROV[ch]||[]).filter(function(m){return !selProv||m.prov===selProv;});
         if(!cpList.length)return;
@@ -372,6 +394,7 @@ function renderVentas(){
   if(vista==='mes'){
     Object.keys(D_CHPROV).forEach(function(ch){
       if(selCh&&ch!==selCh)return;
+      if(!chMatchTipo(ch))return;
       var cpList=(D_CHPROV[ch]||[]).filter(function(m){return !selProv||m.prov===selProv;});
       if(!cpList.length)return;
       var vv=0,rr=0,ff=0,nn=0;
@@ -429,6 +452,7 @@ function filtRuta(){
     if(fFec&&r.f!==fFec)return false;
     if(fCh&&r.ch!==fCh)return false;
     if(fCam&&String(r.cam)!==String(fCam))return false;
+    if(!chMatchTipo(r.ch))return false;
     if(fQ){
       var cls=D_CLI[String(r.rep)]||[];
       return cls.some(function(c){return c[1].toLowerCase().includes(fQ)||c[2].toLowerCase().includes(fQ);});

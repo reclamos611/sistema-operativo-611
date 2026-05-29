@@ -88,6 +88,38 @@ CHOFER_MAP = {
     'TALAVERA ADRIAN ISMAEL':         'TALAVERA ADRIAN',
 }
 
+# Clasificacion de choferes
+CHOFER_TIPO = {
+    'GUZMAN DIEGO':          'propio',
+    'MAXIMILANO  CARO':      'propio',
+    'JOSE RICAPA':           'propio',
+    'RODRIGO AVALOS':        'propio',
+    'GASTON OYOLA':          'propio',
+    'LUCAS LUJAN':           'propio',
+    'LUIS JUAREZ':           'propio',
+    'JORGE MOLINA':          'propio',
+    'DIEGO RAFAELLI':        'propio',
+    'SUAREZ EMIR':           'propio',
+    'MARTINEZ LEANDRO':      'propio',
+    'CECILIA GONZALEZ':      'tercero',
+    'BELEN AGUSTIN':         'tercero',
+    'LUIS GUIRAO':           'tercero',
+    'EZEQUIEL JUNCOS':       'tercero',
+    'RODRIGO ROMANO':        'tercero',
+    'MAURO IRIARTE':         'tercero',
+    'PABLO CANELO':          'tercero',
+    'GUSTAVO NIETO':         'tercero',
+    'LEONARDO GUEVARA':      'tercero',
+    'DUILIO PALLOTTI':       'tercero',
+    'MARTIN ROMANO':         'tercero',
+    'TALAVERA ADRIAN':       'tercero',
+    'ALLENDE ALEJANDRO JAVIER':       'backup',
+    'MENDIZABAL FRANCO WENCESLAO':    'backup',
+    'BARRIONUEVO SERGIO':             'backup',
+    'CHOF A PRUEBA':                  'tercero',
+    'CHOF A PRUE 1':                  'tercero',
+}
+
 print("\nLeyendo archivos...")
 
 # ── VENTA ACTUAL ──────────────────────────────────────────────────────────────
@@ -252,9 +284,11 @@ for rep_id, grp in vc.groupby('reparto'):
         cmp = str(cg['Comprobante'].iloc[0] or '')
         fl  = 1 if rt else(2 if dv else(3 if cm2 else 0))
         clientes.append([si(cli_id),raz,dir2,loc,cmp,imp,cnt,fl])
+    ch_tipo = CHOFER_TIPO.get(ch.strip().upper(), CHOFER_TIPO.get(ch.strip(), 'tercero'))
     route_index.append({'rep':si(rep_id),'ch':ch,'f':str(fec),'cam':cam,
         'n':len(clientes),'tot':round(tot,0),'rej':rej,'kg':round(kg_tot,1),
-        'pep':round(pep,0),'mol':round(mol,0),'sof':round(sof,0),'oth':round(oth,0)})
+        'pep':round(pep,0),'mol':round(mol,0),'sof':round(sof,0),'oth':round(oth,0),
+        'tipo':ch_tipo})
     client_map[str(si(rep_id))]=clientes
 route_index.sort(key=lambda x:(x['f'],x['ch']))
 print(f"  Rutas: {len(route_index)} repartos")
@@ -523,6 +557,7 @@ DATA_JS = '\n'.join([
     f"var D_PERIODO={json.dumps(PERIODO)};",
     f"var D_PROVS={json.dumps(sorted(vc['proveedor'].dropna().str.strip().unique().tolist()),ensure_ascii=True,separators=(',',':'))};",
     f"var D_CHS={json.dumps(sorted(vc['chofer'].dropna().str.strip().unique().tolist()),ensure_ascii=True,separators=(',',':'))};",
+    f"var D_CH_TIPOS={json.dumps({ch:CHOFER_TIPO.get(ch.strip(),CHOFER_TIPO.get(ch,'tercero')) for ch in vc['chofer'].dropna().str.strip().unique()},ensure_ascii=True,separators=(',',':'))};",
     make_chunks('D_CART',   cart_records),
     make_chunks('D_APP',    app_records),
     conc_js,
